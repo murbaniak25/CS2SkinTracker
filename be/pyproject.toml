@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "cs2skintracker"
+version = "0.1.0" 
+description = ""
+authors = ["m.urbaniak25"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.13"
+fastapi = "^0.122.0"
+uvicorn = "^0.38.0"
+sqlalchemy = "^2.0.44"
+pydantic-settings = "^2.12.0"
+alembic = "^1.17.2"
+vdf = "^3.4"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
