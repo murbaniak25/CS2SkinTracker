@@ -9,6 +9,9 @@ class Settings(BaseSettings):
     POSTGRES_PORT: int
     POSTGRES_DB: str
 
+    REDIS_HOST: str
+    REDIS_PORT: int
+
     @computed_field
     def SQLALCHEMY_DATABASE_URI(self) -> str:
         return str(PostgresDsn.build(
@@ -19,6 +22,10 @@ class Settings(BaseSettings):
             port=self.POSTGRES_PORT,
             path=self.POSTGRES_DB,
         ))
+
+    @computed_field
+    def REDIS_URL(self) -> str:
+        return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/0"
 
     class Config:
         env_file = ".env"

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cs2skintracker"
-version = "0.1.0" 
+version = "0.2.0" 
 description = ""
 authors = ["m.urbaniak25"]
 readme = "README.md"
@@ -14,6 +14,10 @@ pydantic-settings = "^2.12.0"
 alembic = "^1.17.2"
 vdf = "^3.4"
 asyncpg = "^0.31.0"
+httpx = "^0.28.1"
+brotli = "^1.2.0"
+celery = "^5.6.2"
+redis = "^7.1.0"
 
 
 [build-system]

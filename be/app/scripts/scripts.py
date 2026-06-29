@@ -2,6 +2,7 @@ import vdf
 import os
 import sys
 import asyncio
+import httpx
 from pathlib import Path
 
 sys.path.append(os.getcwd())
@@ -227,115 +228,156 @@ async def seed_cases():
             print(f"Error: {e}")
             await db.rollback()
 
+
 async def seed_skins():
-    count=0
+    count = 0
     items, tokens = clean_dictionaries(items_dict, tokens_dict)
     if items is None or tokens is None:
         return
+
+    url = "https://raw.githubusercontent.com/ByMykel/CSGO-API/refs/heads/main/public/api/en/skins.json"
+    api_map = {}
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(url)
+            if response.status_code == 200:
+                external_skins = response.json()
+                api_map = {item['name']: {
+                    'rarity': item.get('rarity', {}).get('name'),
+                    'image': item.get('image')
+                } for item in external_skins}
+                print(f"Załadowano {len(api_map)} rekordów z API.")
+        except Exception as e:
+            print(f"Błąd API: {e}. Kontynuuję z VDF (może być błędne rarity).")
+
     item_sets_section = items.get('item_sets', {})
     paint_kits = items.get('paint_kits', {})
     items_def = items.get('items', {})
     prefabs_section = items.get('prefabs', {})
-    paint_kit_rarities = items.get('paint_kits_rarity', {})
-    rarities_section = items.get('rarities', {})
 
     async with SessionLocal() as db:
         try:
-            result_coll = await db.execute(select(models.Collection))
-            db_collections_map = {c.name: c.collection_id for c in result_coll.scalars().all()}
+            res_coll = await db.execute(select(models.Collection))
+            db_collections_map = {c.name: c.collection_id for c in res_coll.scalars().all()}
 
-            result_weap = await db.execute(select(models.Weapon))
-            db_weapons_map = {w.name: w.weapon_id for w in result_weap.scalars().all()}
+            res_weap = await db.execute(select(models.Weapon))
+            db_weapons_map = {w.name: w.weapon_id for w in res_weap.scalars().all()}
 
-            result_rar = await db.execute(select(models.Rarity))
-            db_rarities_map = {r.name: r.rarity_id for r in result_rar.scalars().all()}
+            res_rar = await db.execute(select(models.Rarity))
+            db_rarities_map = {r.name: r.rarity_id for r in res_rar.scalars().all()}
 
             pk_map = {}
             for tag, data in paint_kits.items():
                 internal_name = data.get('name')
-                float_min = data.get('wear_remap_min')
-                float_max = data.get('wear_remap_max')
-                if not internal_name:
-                    continue
-                desc_tag = data.get('description_tag')
-                if desc_tag:
-                    clean = desc_tag.replace('#', '').lower()
-                    real_name = tokens.get(clean)
-                    if real_name:
-                        pk_map[internal_name.lower()] = real_name, float_min, float_max
+                if not internal_name: continue
+                f_min = float(data.get('wear_remap_min', 0.0))
+                f_max = float(data.get('wear_remap_max', 1.0))
+                desc_tag = data.get('description_tag', '').replace('#', '').lower()
+                real_name = tokens.get(desc_tag)
+                if real_name:
+                    pk_map[internal_name.lower()] = (real_name, f_min, f_max)
 
             weapon_tag_map = {}
             for key, data in items_def.items():
-                technical_name = data.get('name')
-                if not technical_name:
-                    continue
-                weapon_token_raw = data.get('item_name')
-                if not weapon_token_raw:
-                    prefab_tag = data.get('prefab')
-                    if prefab_tag:
-                        weapon_token_raw = prefabs_section.get(prefab_tag, {}).get('item_name')
-                if weapon_token_raw:
-                    clean_token = weapon_token_raw.replace("#", "").lower()
-                    real_name = tokens.get(clean_token)
-                    if real_name:
-                        weapon_tag_map[technical_name.lower()] = real_name
-
-            rarities_map = {}
-            for key, data in paint_kit_rarities.items():
-                paint_kit = key.lower()
-                rarity_raw = rarities_section.get(data).get('loc_key_weapon').lower()
-                rarity = tokens.get(rarity_raw)
-                rarities_map[paint_kit] = rarity
-
-            # Some skins (e.g., Doppler, Gamma Doppler, Tiger Tooth) have multiple internal entries
-            # in items_game.txt for different "Phases" (Phase 1-4, Emerald, Sapphire, etc.).
-            # However, they all map to the SAME display name (e.g., "Gamma Doppler").
-            # This set acts as a runtime cache to track (weapon_id, skin_name) pairs we have already processed.
-            # It prevents the script from trying to insert the same skin name for the same weapon multiple times,
-            # which would cause a database unique constraint violation crash.
+                tech_name = data.get('name')
+                if not tech_name: continue
+                token = data.get('item_name') or prefabs_section.get(data.get('prefab', ''), {}).get('item_name')
+                if token:
+                    weapon_tag_map[tech_name.lower()] = tokens.get(token.replace("#", "").lower())
 
             processed_skins = set()
-            count = 0
             for key, data in item_sets_section.items():
-                item_set_token_raw = data.get('name')
-                item_set_token = item_set_token_raw.replace("#", "").lower()
-                collection_name = tokens.get(item_set_token)
-                if collection_name not in db_collections_map:
-                    continue
-                items = data.get('items', {})
-                for item_str in items:
+                coll_name = tokens.get(data.get('name', '').replace("#", "").lower())
+                if coll_name not in db_collections_map: continue
+
+                items_in_set = data.get('items', {})
+                for item_str in items_in_set:
                     parts = item_str.split(']')
-                    weapon_name_tag = parts[1]
-                    paint_kit_tag = parts[0].replace('[','').lower()
-                    weapon = weapon_tag_map[weapon_name_tag]
-                    skin_name = pk_map[paint_kit_tag][0]
-                    rarity = rarities_map[paint_kit_tag]
+                    if len(parts) < 2: continue
+                    paint_kit_tag = parts[0].replace('[', '').lower()
+                    weapon_tag = parts[1].lower()
 
-                    raw_min = pk_map[paint_kit_tag][1]
-                    raw_max = pk_map[paint_kit_tag][2]
-                    float_min = float(raw_min) if raw_min is not None else 0.0
-                    float_max = float(raw_max) if raw_max is not None else 1.0
+                    weapon = weapon_tag_map.get(weapon_tag)
+                    skin_info = pk_map.get(paint_kit_tag)
+                    if not weapon or not skin_info: continue
 
-                    collection_id = db_collections_map[collection_name]
-                    weapon_id = db_weapons_map[weapon]
-                    rarity_id = db_rarities_map[rarity]
+                    skin_name = skin_info[0]
+                    full_name = f"{weapon} | {skin_name}"
 
-                    if (weapon_id, skin_name) in processed_skins:
+                    api_data = api_map.get(full_name)
+                    if api_data and api_data['rarity']:
+                        rarity_name = api_data['rarity']
+                    else:
                         continue
-                    processed_skins.add((weapon_id, skin_name))
-                    stmt = select(models.Skin).filter_by(name=skin_name, weapon_id=weapon_id)
+
+                    rarity_id = db_rarities_map.get(rarity_name)
+                    image_url = api_data.get('image') if api_data else None
+
+                    if not rarity_id: continue
+
+                    if (db_weapons_map[weapon], skin_name) in processed_skins: continue
+                    processed_skins.add((db_weapons_map[weapon], skin_name))
+
+                    stmt = select(models.Skin).filter_by(name=skin_name, weapon_id=db_weapons_map[weapon])
                     result = await db.execute(stmt)
-                    exists = result.scalar_one_or_none()
-                    if not exists:
-                        new_skin = models.Skin(name=skin_name, float_min=float_min, float_max=float_max, collection_id=collection_id, weapon_id = weapon_id, rarity_id = rarity_id)
+                    if not result.scalar_one_or_none():
+                        new_skin = models.Skin(
+                            name=skin_name,
+                            float_min=skin_info[1],
+                            float_max=skin_info[2],
+                            collection_id=db_collections_map[coll_name],
+                            weapon_id=db_weapons_map[weapon],
+                            rarity_id=rarity_id,
+                            image_url=image_url
+                        )
                         db.add(new_skin)
-                        print(f"Added: {weapon} | {skin_name}")
-                        count+=1
+                        print(f"Added: {full_name} ({rarity_name})")
+                        count += 1
+
             await db.commit()
-            print(f"Added: {count} Skins")
+            print(f"Dodano: {count} skinów.")
+        except Exception as e:
+            print(f"Błąd: {e}")
+            await db.rollback()
+
+async def seed_images():
+    url = "https://raw.githubusercontent.com/ByMykel/CSGO-API/refs/heads/main/public/api/en/skins.json"
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(url)
+            if response.status_code != 200:
+                print("Error during request")
+                return
+            external_skins = response.json()
         except Exception as e:
             print(f"Error: {e}")
-            await db.rollback()
+            return
+
+        image_map = {item['name']: item['image'] for item in external_skins if 'image' in item}
+        print(f"Loaded {len(image_map)} images.")
+
+        async with SessionLocal() as db:
+            try:
+                stmt = select(models.Skin, models.Weapon.name).join(models.Weapon)
+                result = await db.execute(stmt)
+                skins_to_update = result.all()
+
+                count = 0
+                for skin_obj, weapon_name in skins_to_update:
+                    full_name = f"{weapon_name} | {skin_obj.name}"
+                    image_url = image_map.get(full_name)
+
+                    if image_url:
+                        skin_obj.image_url = image_url
+                        count += 1
+
+                await db.commit()
+                print(f"Updated: {count} images")
+
+            except Exception as e:
+                print(f"Error during image seeding: {e}")
+                await db.rollback()
+
 
 
 async def main():
@@ -345,6 +387,7 @@ async def main():
     await seed_collections()
     await seed_cases()
     await seed_skins()
+    await seed_images()
 
 if __name__ == "__main__":
     asyncio.run(main())

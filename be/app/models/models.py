@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import String, Boolean, Float, ForeignKey, DateTime, UniqueConstraint
+from sqlalchemy import String, Boolean, Float, ForeignKey, DateTime, UniqueConstraint, Index, Integer
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
@@ -63,6 +63,9 @@ class Skin(Base):
 
 class SkinPrice(Base):
     __tablename__ = 'skin_prices'
+    __table_args__ = (
+        Index('idx_price_history', 'skin_id', 'wear_id', 'stattrack', 'updated_at'),
+    )
     price_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     skin_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("skins.skin_id"))
     wear_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("wear_types.wear_id"))
@@ -98,5 +101,23 @@ class UserSkin(Base):
     fetched_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     user: Mapped["User"] = relationship(back_populates="inventory")
+    skin: Mapped["Skin"] = relationship()
+    wear: Mapped["WearType"] = relationship()
+
+
+class SkinVariant(Base):
+    __tablename__ = 'skin_variants'
+    variant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    skin_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("skins.skin_id"))
+    wear_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("wear_types.wear_id"))
+    stattrack: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    quantity: Mapped[int] = mapped_column(Integer, default=0)
+    last_price: Mapped[float | None] = mapped_column(Float)
+    change_1h: Mapped[float | None] = mapped_column(Float)
+    change_24h: Mapped[float | None] = mapped_column(Float)
+    change_7d: Mapped[float | None] = mapped_column(Float)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
     skin: Mapped["Skin"] = relationship()
     wear: Mapped["WearType"] = relationship()

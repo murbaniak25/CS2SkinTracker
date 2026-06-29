@@ -14,6 +14,7 @@ from pathlib import Path
 from app.core.config import settings
 
 sys.path.append(str(Path(__file__).parent.parent))
+from app.models.models import *
 from app.db.base import Base
 
 # this is the Alembic Config object, which provides
@@ -87,9 +88,7 @@ async def run_async_migrations() -> None:
 
 
 async def run_migrations_online() -> None:
-    cmd_line_url = context.config.get_main_option("sqlalchemy.url")
-    url = cmd_line_url if cmd_line_url else settings.SQLALCHEMY_DATABASE_URI
-
+    url = settings.SQLALCHEMY_DATABASE_URI
     connectable = create_async_engine(
         url,
         poolclass=pool.NullPool,
@@ -99,3 +98,8 @@ async def run_migrations_online() -> None:
         await connection.run_sync(do_run_migrations)
 
     await connectable.dispose()
+
+if context.is_offline_mode():
+    run_migrations_offline()
+else:
+    asyncio.run(run_migrations_online())
