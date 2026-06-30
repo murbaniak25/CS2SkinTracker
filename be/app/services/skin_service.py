@@ -190,20 +190,17 @@ class SkinService:
 
         change_24h = 0
 
-        if len(chart_data) > 1:
-            start_price = chart_data[0]
-            change_24h = ((current_avg - start_price) / start_price) * 100
-
-            if abs(change_24h) > 80:
-                change_24h = 1.25
-        nominal_diff = 0
-
         if chart_data:
-            first_price = chart_data[0]
-            last_price = current_avg
+            if len(chart_data) > 1:
+                first_price = chart_data[0]
+                last_price = current_avg
+                nominal_diff = last_price - first_price
 
-            nominal_diff = last_price - first_price
-            change_24h = (nominal_diff / first_price) * 100
+                if first_price > 0:
+                    change_24h = (nominal_diff / first_price) * 100
+
+                if abs(change_24h) > 80:
+                    change_24h = 1.25
 
         return {
             "current_value": round(current_avg, 2),
