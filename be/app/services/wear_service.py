@@ -4,7 +4,7 @@ from sqlalchemy import select
 
 class WearService:
     async def get_wears(self, db: AsyncSession):
-        stmt = select(models.WearType).order_by(models.WearType.name)
+        stmt = select(models.WearType).where(models.WearType.name != 'Not Painted').order_by(models.WearType.name)
 
         result = await db.execute(stmt)
         return result.scalars().all()

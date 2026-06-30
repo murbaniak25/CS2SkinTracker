@@ -30,6 +30,7 @@ class SkinService:
                 joinedload(models.SkinVariant.skin).joinedload(models.Skin.rarity)
             )
             .where(models.SkinVariant.last_price.is_not(None))
+            .where(models.Rarity.name != 'Stock')
         )
 
         if search:
