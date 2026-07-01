@@ -41,7 +41,9 @@ class TradeUpService:
                 models.SkinVariant.last_price.label("last_price"),
                 models.Skin.image_url.label("image_url"),
                 models.Collection.name.label("collection_name"),
-                models.Rarity.name.label("rarity_name")
+                models.Rarity.name.label("rarity_name"),
+                models.Skin.float_min.label("float_min"),
+                models.Skin.float_max.label("float_max"),
             )
             .join(models.Skin, models.SkinVariant.skin_id == models.Skin.skin_id)
             .join(models.Weapon, models.Skin.weapon_id == models.Weapon.weapon_id)
@@ -76,14 +78,11 @@ class TradeUpService:
     async def calculate_simulation(self, db: AsyncSession, input_items: list, is_stattrack: bool):
         reverse_rarity_order = {v: k for k, v in self.RARITY_ORDER.items()}
 
-        # 1. Mapa WearType (Nazwa -> ID)
         wear_types_res = await db.execute(select(models.WearType))
         wear_map = {w.name: w.wear_id for w in wear_types_res.scalars().all()}
 
-        # Używamy .skin_id, bo tak masz w schemacie TradeUpRequestItem
         unique_skin_ids = list(set([item.skin_id for item in input_items]))
 
-        # 2. Pobieramy dane o skinach (Rzadkość, Kolekcja)
         stmt = (
             select(models.Skin, models.Rarity, models.Collection)
             .join(models.Rarity, models.Skin.rarity_id == models.Rarity.rarity_id)
@@ -103,7 +102,6 @@ class TradeUpService:
         collection_counts = {}
         weighted_float_sum = 0.0
 
-        # 3. Pętla po 10 skinach wejściowych
         for item in input_items:
             skin_id = item.skin_id
             user_float = item.float_value
@@ -111,7 +109,6 @@ class TradeUpService:
             wear_name = self.get_wear_name_from_float(user_float)
             target_wear_id = wear_map.get(wear_name)
 
-            # Pobieramy cenę konkretnego wariantu (Skin + Wear + StatTrak)
             variant_stmt = (
                 select(models.SkinVariant.last_price)
                 .where(models.SkinVariant.skin_id == skin_id)
@@ -124,7 +121,6 @@ class TradeUpService:
             total_cost += price
             weighted_float_sum += user_float
 
-            # Liczymy wystąpienia kolekcji dla szans procentowych
             coll_id = skins_data[skin_id].Collection.collection_id
             collection_counts[coll_id] = collection_counts.get(coll_id, 0) + 1
 
@@ -139,7 +135,6 @@ class TradeUpService:
         t_res = await db.execute(t_rarity_stmt)
         target_rarity_id = t_res.scalar_one_or_none()
 
-        # 4. Obliczanie wyników (Outcomes)
         outcomes = []
         for coll_id, count in collection_counts.items():
             outcome_stmt = (

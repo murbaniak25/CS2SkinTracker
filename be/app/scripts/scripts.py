@@ -270,8 +270,8 @@ async def seed_skins():
             for tag, data in paint_kits.items():
                 internal_name = data.get('name')
                 if not internal_name: continue
-                f_min = float(data.get('wear_remap_min', 0.0))
-                f_max = float(data.get('wear_remap_max', 1.0))
+                f_min = float(data.get('wear_remap_min', 0.060000))
+                f_max = float(data.get('wear_remap_max', 0.800000))
                 desc_tag = data.get('description_tag', '').replace('#', '').lower()
                 real_name = tokens.get(desc_tag)
                 if real_name:
@@ -377,6 +377,43 @@ async def seed_images():
             except Exception as e:
                 print(f"Error during image seeding: {e}")
                 await db.rollback()
+
+
+async def update_skins_floats():
+    items, tokens = clean_dictionaries(items_dict, tokens_dict)
+    if items is None or tokens is None:
+        return
+    paint_kits = items.get('paint_kits', {})
+
+    pk_map = {}
+    for tag, data in paint_kits.items():
+        internal_name = data.get('name')
+        if not internal_name:
+            continue
+        f_min = float(data.get('wear_remap_min', 0.060000))
+        f_max = float(data.get('wear_remap_max', 0.800000))
+        desc_tag = data.get('description_tag', '').replace('#', '').lower()
+        real_name = tokens.get(desc_tag)
+        if real_name:
+            pk_map[real_name] = (f_min, f_max)
+
+    async with SessionLocal() as db:
+        try:
+            res = await db.execute(select(models.Skin))
+            db_skins = res.scalars().all()
+            updated_count = 0
+            for skin in db_skins:
+                if skin.name in pk_map:
+                    correct_min, correct_max = pk_map[skin.name]
+                    if skin.float_min != correct_min or skin.float_max != correct_max:
+                        skin.float_min = correct_min
+                        skin.float_max = correct_max
+                        updated_count += 1
+            await db.commit()
+            print(f"Updated: {updated_count} skins")
+        except Exception as e:
+            print(f"Error: {e}")
+            await db.rollback()
 
 
 

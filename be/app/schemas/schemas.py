@@ -86,6 +86,8 @@ class SkinTradeUpRead(BaseRead):
     image_url: Optional[str] = None
     collection_name: Optional[str] = None
     rarity_name: str
+    float_min: float
+    float_max: float
 
 class TradeUpRequestItem(BaseModel):
     skin_id: UUID
