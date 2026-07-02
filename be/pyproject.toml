@@ -20,6 +20,7 @@ celery = "^5.6.2"
 redis = "^7.1.0"
 tzdata = "^2026.2"
 gevent = "^26.5.0"
+pyjwt = "^2.13.0"
 
 
 [build-system]
