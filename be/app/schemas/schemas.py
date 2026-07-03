@@ -114,3 +114,10 @@ class TradeUpSimulationResult(BaseRead):
     avg_float: float
     total_cost: float
     outcomes: list[TradeUpOutcome]
+
+class UserMeResponse(BaseModel):
+    user_id: UUID
+    steam_id: str
+    name: str
+    avatar_url: Optional[str] = None
+    last_login_at: datetime
