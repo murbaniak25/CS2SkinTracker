@@ -121,3 +121,11 @@ export interface TradeUpRequest {
   items: TradeUpRequestItem[];
   stattrack: boolean;
 }
+
+export interface UserMeResponse {
+    user_id: string;
+    steam_id: string;
+    name: string;
+    avatar_url?: string;
+    last_login_at: string;
+}
