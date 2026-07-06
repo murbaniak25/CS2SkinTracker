@@ -54,6 +54,7 @@ class TradeUpService:
 
         stmt = stmt.where(models.Rarity.name == rarity)
         stmt = stmt.where(models.SkinVariant.stattrack == stattrack)
+        stmt = stmt.where(models.SkinVariant.souvenir == False)
 
         if search:
             search_filter = f"%{search}%"
@@ -114,6 +115,7 @@ class TradeUpService:
                 .where(models.SkinVariant.skin_id == skin_id)
                 .where(models.SkinVariant.wear_id == target_wear_id)
                 .where(models.SkinVariant.stattrack == is_stattrack)
+                .where(models.SkinVariant.souvenir == False)
             )
             v_res = await db.execute(variant_stmt)
             price = v_res.scalar_one_or_none() or 0.0
@@ -164,6 +166,7 @@ class TradeUpService:
                     .where(models.SkinVariant.skin_id == p_skin.skin_id)
                     .where(models.SkinVariant.wear_id == out_wear_id)
                     .where(models.SkinVariant.stattrack == is_stattrack)
+                    .where(models.SkinVariant.souvenir == False)
                 )
                 p_v_res = await db.execute(p_variant_stmt)
                 price_data = p_v_res.first()

@@ -1,4 +1,5 @@
-from datetime import datetime, timezone, timedelta
+from datetime import timedelta
+from app.core.utils import get_utc_now
 
 from sqlalchemy import select, func, or_, desc, tuple_, text
 from sqlalchemy.orm import joinedload
@@ -16,7 +17,8 @@ class SkinService:
             rarity: str | None = None,
             collection: str | None = None,
             wear: str | None = None,
-            stattrack: bool | None = None
+            stattrack: bool | None = None,
+            souvenir: bool | None = None
     ):
         query = (
             select(models.SkinVariant)
@@ -54,6 +56,9 @@ class SkinService:
         if stattrack is not None:
             query = query.where(models.SkinVariant.stattrack == stattrack)
 
+        if souvenir is not None:
+            query = query.where(models.SkinVariant.souvenir == souvenir)
+
         count_query = select(func.count()).select_from(query.subquery())
         total_result = await db.execute(count_query)
         total = total_result.scalar() or 0
@@ -72,6 +77,7 @@ class SkinService:
                 "skin_name": v.skin.name,
                 "wear_name": v.wear.name,
                 "stattrack": v.stattrack,
+                "souvenir": v.souvenir,
                 "rarity_color": v.skin.rarity.color_hex if v.skin.rarity else None,
                 "image_url": v.skin.image_url,
                 "last_price": v.last_price,
@@ -91,6 +97,7 @@ class SkinService:
                 models.Skin.name.label("skin_name"),
                 models.WearType.name.label("wear_name"),
                 models.SkinVariant.stattrack,
+                models.SkinVariant.souvenir,
                 models.Rarity.color_hex,
                 models.Skin.image_url,
                 models.SkinVariant.last_price,
@@ -121,7 +128,7 @@ class SkinService:
             )
             .distinct(hour_bucket)
             .where(
-                models.SkinPrice.skin_id == skin_info.skin_id, models.SkinPrice.wear_id == skin_info.wear_id, models.SkinPrice.stattrack == skin_info.stattrack)
+                models.SkinPrice.skin_id == skin_info.skin_id, models.SkinPrice.wear_id == skin_info.wear_id, models.SkinPrice.stattrack == skin_info.stattrack, models.SkinPrice.souvenir == skin_info.souvenir)
             .order_by(hour_bucket.desc(), models.SkinPrice.updated_at.desc())
             .limit(24)
         )
@@ -176,11 +183,13 @@ class SkinService:
                 tuple_(
                     models.SkinPrice.skin_id,
                     models.SkinPrice.wear_id,
-                    models.SkinPrice.stattrack
+                    models.SkinPrice.stattrack,
+                    models.SkinPrice.souvenir
+
                 ).in_(top_criteria)
             )
             .where(
-                models.SkinPrice.updated_at >= (datetime.now(timezone.utc) - timedelta(hours=25)).replace(tzinfo=None))
+                models.SkinPrice.updated_at >= (get_utc_now() - timedelta(hours=25)).replace(tzinfo=None))
             .group_by(text("hour"))
             .order_by(text("hour"))
         )

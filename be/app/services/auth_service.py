@@ -1,11 +1,12 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.models.models import User
-from fastapi.responses import RedirectResponse
 from fastapi import Request, HTTPException
 from httpx import AsyncClient
-from datetime import datetime, timezone
+from datetime import timezone
 from app.core.security import create_access_token
+
+from app.core.utils import get_utc_now
 
 class AuthService:
     def __init__(self, frontend_url: str, backend_url:str, steam_api_key: str, steam_openid_url: str):
@@ -63,7 +64,7 @@ class AuthService:
             result = await db.execute(select(User).where(User.steam_id == steam_id))
             user = result.scalars().first()
 
-            current_time = datetime.now(timezone.utc).replace(tzinfo=None)
+            current_time = get_utc_now()
 
             if not user:
                 user = User(

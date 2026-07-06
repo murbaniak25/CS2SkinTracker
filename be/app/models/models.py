@@ -1,5 +1,7 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
+
+from app.core.utils import get_utc_now
 
 from sqlalchemy import String, Boolean, Float, ForeignKey, DateTime, UniqueConstraint, Index, Integer
 from sqlalchemy.dialects.postgresql import UUID
@@ -70,9 +72,10 @@ class SkinPrice(Base):
     skin_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("skins.skin_id"))
     wear_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("wear_types.wear_id"))
     stattrack: Mapped[bool] = mapped_column(Boolean, default=False)
+    souvenir: Mapped[bool] = mapped_column(Boolean, default=False)
     price: Mapped[float] = mapped_column(Float)
     currency: Mapped[str] = mapped_column(String(3), default="PLN")
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: get_utc_now())
 
     skin: Mapped["Skin"] = relationship()
     wear: Mapped["WearType"] = relationship()
@@ -84,7 +87,8 @@ class User(Base):
     steam_id: Mapped[str] = mapped_column(String(17), unique=True, index=True)
     name: Mapped[str | None] = mapped_column(String, index=True)
     avatar_url: Mapped[str | None] = mapped_column(String)
-    last_login_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    last_login_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: get_utc_now())
+    last_inventory_synced: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, default=None)
 
     inventory: Mapped[list["UserSkin"]] = relationship(back_populates="user")
 
@@ -97,8 +101,9 @@ class UserSkin(Base):
     wear_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("wear_types.wear_id"))
 
     stattrack: Mapped[bool] = mapped_column(Boolean, default=False)
+    souvenir: Mapped[bool] = mapped_column(Boolean, default=False)
     float_value: Mapped[float | None] = mapped_column(Float)
-    fetched_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    fetched_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: get_utc_now())
 
     user: Mapped["User"] = relationship(back_populates="inventory")
     skin: Mapped["Skin"] = relationship()
@@ -111,13 +116,14 @@ class SkinVariant(Base):
     skin_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("skins.skin_id"))
     wear_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("wear_types.wear_id"))
     stattrack: Mapped[bool] = mapped_column(Boolean, default=False)
+    souvenir: Mapped[bool] = mapped_column(Boolean, default=False)
 
     quantity: Mapped[int] = mapped_column(Integer, default=0)
     last_price: Mapped[float | None] = mapped_column(Float)
     change_1h: Mapped[float | None] = mapped_column(Float)
     change_24h: Mapped[float | None] = mapped_column(Float)
     change_7d: Mapped[float | None] = mapped_column(Float)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: get_utc_now())
 
     skin: Mapped["Skin"] = relationship()
     wear: Mapped["WearType"] = relationship()

@@ -1,7 +1,6 @@
 from pydantic_settings import BaseSettings
 from pydantic import PostgresDsn, computed_field
 
-
 class Settings(BaseSettings):
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str

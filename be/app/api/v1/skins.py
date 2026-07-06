@@ -21,7 +21,8 @@ async def get_skins(
         rarity: str | None = None,
         collection: str | None = None,
         wear: str | None = None,
-        stattrack: bool | None = None
+        stattrack: bool | None = None,
+        souvenir: bool | None = None
 ):
     items, total = await skin_service.get_skins_list(
         db,
@@ -31,7 +32,8 @@ async def get_skins(
         rarity=rarity,
         collection=collection,
         wear=wear,
-        stattrack=stattrack
+        stattrack=stattrack,
+        souvenir=souvenir
     )
 
     return {

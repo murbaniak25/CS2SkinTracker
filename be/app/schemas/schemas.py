@@ -34,6 +34,7 @@ class SkinListRead(BaseRead):
     skin_name: str
     wear_name: str
     stattrack: bool
+    souvenir: bool
     rarity_color: Optional[str]
     image_url: Optional[str]
     last_price: float
@@ -82,6 +83,7 @@ class SkinTradeUpRead(BaseRead):
     skin_name: str
     wear_name: str
     stattrack: bool
+    souvenir: bool
     last_price: float
     image_url: Optional[str] = None
     collection_name: Optional[str] = None

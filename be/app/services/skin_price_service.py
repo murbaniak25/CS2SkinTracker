@@ -1,6 +1,7 @@
 import logging
 import re
-from datetime import datetime, timedelta
+from datetime import timedelta
+from app.core.utils import get_utc_now
 
 import httpx
 from sqlalchemy import select
@@ -42,7 +43,7 @@ class SkinPriceService:
         knife_rarity_id = knife_rarity.rarity_id if knife_rarity else None
 
         skin_variants_db = await db.execute(select(models.SkinVariant))
-        skin_variants_map = {(sv.skin_id, sv.wear_id, sv.stattrack): sv for sv in skin_variants_db.scalars().all()}
+        skin_variants_map = {(sv.skin_id, sv.wear_id, sv.stattrack, sv.souvenir): sv for sv in skin_variants_db.scalars().all()}
 
         updated_count = 0
         new_skins_created = 0
@@ -60,6 +61,7 @@ class SkinPriceService:
 
             is_knife = match.group(1) is not None
             is_stattrack = match.group(2) == "StatTrak™ "
+            is_souvenir = match.group(2) == "Souvenir "
             weapon_name = match.group(3)
             skin_name = match.group(4)
             wear_name = match.group(5)
@@ -92,7 +94,7 @@ class SkinPriceService:
                 new_skins_created += 1
 
             if skin_id:
-                variant_key = (skin_id, wear_id, is_stattrack)
+                variant_key = (skin_id, wear_id, is_stattrack, is_souvenir)
                 variant = skin_variants_map.get(variant_key)
 
                 if not variant:
@@ -100,6 +102,7 @@ class SkinPriceService:
                         skin_id=skin_id,
                         wear_id=wear_id,
                         stattrack=is_stattrack,
+                        souvenir=is_souvenir,
                         last_price=price,
                         quantity=quantity
 
@@ -110,13 +113,14 @@ class SkinPriceService:
                 else:
                     variant.last_price = price
                     variant.quantity = quantity
-                    variant.updated_at = datetime.utcnow()
+                    variant.updated_at = get_utc_now()
 
 
                 new_price = models.SkinPrice(
                     skin_id=skin_id,
                     wear_id=wear_id,
                     stattrack=is_stattrack,
+                    souvenir=is_souvenir,
                     price=price,
                     currency="PLN"
                 )
@@ -131,7 +135,7 @@ class SkinPriceService:
         return updated_count
 
     async def calculate_historical_changes(self, db: AsyncSession):
-        now = datetime.utcnow()
+        now = get_utc_now()
         intervals = {
             "1h": now - timedelta(hours=1),
             "24h": now - timedelta(days=1),
@@ -148,6 +152,7 @@ class SkinPriceService:
                         models.SkinPrice.skin_id == variant.skin_id,
                         models.SkinPrice.wear_id == variant.wear_id,
                         models.SkinPrice.stattrack == variant.stattrack,
+                        models.SkinPrice.souvenir == variant.souvenir,
                         models.SkinPrice.updated_at <= time_threshold
                     )
                     .order_by(models.SkinPrice.updated_at.desc())
