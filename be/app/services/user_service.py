@@ -1,10 +1,10 @@
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, desc, and_
 
 from app.core.utils import get_utc_now
-from app.models.models import UserSkin, WearType, Weapon, Skin, User
+from app.models.models import UserSkin, WearType, Weapon, Skin, User, Rarity, SkinVariant
 import re
 
 class UserService:
@@ -45,7 +45,12 @@ class UserService:
 
             for detail in prop.get("asset_properties", []):
                 if detail.get("name") == "Wear Rating":
-                    float_val = detail.get("float_value")
+                    raw_float = detail.get("float_value")
+                    if raw_float is not None:
+                        try:
+                            float_val = float(raw_float)
+                        except (ValueError, TypeError):
+                            float_val = None
                     break
 
             properties_map[key] = float_val
@@ -158,6 +163,40 @@ class UserService:
 
         return parsed
 
+    async def get_user_inventory(self, db: AsyncSession, user_id):
+        stmt = (select(
+            Skin.skin_id,
+            Weapon.name.label("weapon_name"),
+            Skin.name.label("skin_name"),
+            WearType.name.label("wear_name"),
+            UserSkin.stattrack,
+            UserSkin.souvenir,
+            Rarity.color_hex.label("rarity_color"),
+            Skin.image_url,
+            SkinVariant.last_price,
+            SkinVariant.change_1h,
+            SkinVariant.change_24h,
+            SkinVariant.change_7d
+        )
+            .select_from(UserSkin)
+            .join(Skin, UserSkin.skin_id == Skin.skin_id)
+            .join(Weapon, Skin.weapon_id == Weapon.weapon_id)
+            .outerjoin(WearType, UserSkin.wear_id == WearType.wear_id)
+            .outerjoin(Rarity, Skin.rarity_id == Rarity.rarity_id)
+            .outerjoin(
+            SkinVariant,
+            and_(
+                UserSkin.skin_id == SkinVariant.skin_id,
+                UserSkin.wear_id == SkinVariant.wear_id,
+                UserSkin.stattrack == SkinVariant.stattrack,
+                UserSkin.souvenir == SkinVariant.souvenir
+            )
+        )
+            .where(UserSkin.user_id == user_id)
+            .order_by(desc(SkinVariant.last_price).nulls_last())
+        )
+        result = await db.execute(stmt)
+        return result.mappings().all()
 
 
 
