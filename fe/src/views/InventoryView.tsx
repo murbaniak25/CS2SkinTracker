@@ -50,6 +50,24 @@ const InventoryView = () => {
 
   const latestSnapshot = snapshots.length > 0 ? snapshots[0] : null;
 
+  const itemsData = latestSnapshot?.items_data || [];
+
+  const sortedByChange = [...itemsData].sort(
+    (a, b) => b.change_24h - a.change_24h,
+  );
+  const topGainer =
+    sortedByChange.length > 0 && sortedByChange[0].change_24h > 0
+      ? sortedByChange[0]
+      : null;
+  const topLoser =
+    sortedByChange.length > 0 &&
+    sortedByChange[sortedByChange.length - 1].change_24h < 0
+      ? sortedByChange[sortedByChange.length - 1]
+      : null;
+
+  const mostValuable =
+    [...itemsData].sort((a, b) => b.price - a.price)[0] || null;
+
   const chartData = [...snapshots].reverse().map((snap) => ({
     date: new Date(snap.created_at).toLocaleDateString(),
     value: Number(snap.total_value.toFixed(2)),
@@ -93,7 +111,141 @@ const InventoryView = () => {
           {isSyncing ? "Syncing..." : "Sync Steam Inventory"}
         </Button>
       </div>
+      {/* SEKCJA 1.5: HIGHLIGHTS (MVP, Top Gainer, Top Loser) */}
+      {(mostValuable || topGainer || topLoser) && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* MOST VALUABLE ITEM */}
+          {mostValuable && (
+            <div
+              className="bg-bg border border-border-muted rounded-sm p-4 flex items-center gap-4 shadow-xl border-l-4 transition-all hover:bg-bg-light/10"
+              style={{
+                borderLeftColor: mostValuable.rarity_color || "var(--primary)",
+              }}
+            >
+              <div className="w-16 h-16 flex-shrink-0 bg-bg-dark/50 rounded-sm p-1">
+                {mostValuable.image_url ? (
+                  <img
+                    src={mostValuable.image_url}
+                    alt=""
+                    className="w-full h-full object-contain drop-shadow-md"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-[8px] opacity-30">
+                    NO IMG
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-1 flex items-center gap-1">
+                  <svg
+                    className="w-3 h-3 text-yellow-500"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                  Most Valuable
+                </p>
+                <p
+                  className="text-[11px] font-black uppercase truncate"
+                  style={{ color: mostValuable.rarity_color }}
+                >
+                  {mostValuable.weapon} | {mostValuable.skin}
+                </p>
+                <p className="text-[14px] font-black text-text mt-0.5">
+                  {mostValuable.price.toFixed(2)} PLN
+                </p>
+              </div>
+            </div>
+          )}
 
+          {/* TOP GAINER */}
+          {topGainer && (
+            <div className="bg-bg border border-border-muted rounded-sm p-4 flex items-center gap-4 shadow-xl border-l-4 border-l-green-500 transition-all hover:bg-bg-light/10">
+              <div className="w-16 h-16 flex-shrink-0 bg-bg-dark/50 rounded-sm p-1">
+                {topGainer.image_url ? (
+                  <img
+                    src={topGainer.image_url}
+                    alt=""
+                    className="w-full h-full object-contain drop-shadow-md"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-[8px] opacity-30">
+                    NO IMG
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-bold text-green-500 uppercase tracking-widest mb-1 flex items-center gap-1">
+                  <svg
+                    className="w-3 h-3"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                    />
+                  </svg>
+                  Top Gainer (24H)
+                </p>
+                <p className="text-[11px] font-black text-text uppercase truncate">
+                  {topGainer.weapon} | {topGainer.skin}
+                </p>
+                <p className="text-[14px] font-black text-green-500 mt-0.5">
+                  +{topGainer.change_24h.toFixed(2)}%
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* TOP LOSER */}
+          {topLoser && (
+            <div className="bg-bg border border-border-muted rounded-sm p-4 flex items-center gap-4 shadow-xl border-l-4 border-l-red-500 transition-all hover:bg-bg-light/10">
+              <div className="w-16 h-16 flex-shrink-0 bg-bg-dark/50 rounded-sm p-1">
+                {topLoser.image_url ? (
+                  <img
+                    src={topLoser.image_url}
+                    alt=""
+                    className="w-full h-full object-contain drop-shadow-md"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-[8px] opacity-30">
+                    NO IMG
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-bold text-red-500 uppercase tracking-widest mb-1 flex items-center gap-1">
+                  <svg
+                    className="w-3 h-3"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"
+                    />
+                  </svg>
+                  Top Loser (24H)
+                </p>
+                <p className="text-[11px] font-black text-text uppercase truncate">
+                  {topLoser.weapon} | {topLoser.skin}
+                </p>
+                <p className="text-[14px] font-black text-red-500 mt-0.5">
+                  {topLoser.change_24h.toFixed(2)}%
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
       {/* SEKCJA 2: WYKRES (Jeśli są dane) */}
       {snapshots.length > 0 && (
         <div className="bg-bg border border-border-muted rounded-sm p-8 shadow-2xl">
@@ -188,7 +340,11 @@ const InventoryView = () => {
             {latestSnapshot.items_data.map((item, idx) => (
               <div
                 key={idx}
-                className="bg-bg-light/10 border border-border-muted/50 p-4 rounded-sm hover:border-primary/50 transition-colors flex flex-col relative group"
+                className="bg-bg-light/10 border p-4 rounded-sm hover:scale-[1.02] transition-all flex flex-col relative group overflow-hidden shadow-md hover:shadow-xl"
+                style={{
+                  borderColor: `${item.rarity_color}50`,
+                  backgroundImage: `linear-gradient(to top, ${item.rarity_color}30 0%, transparent 60%)`,
+                }}
               >
                 {/* Wskaźnik ilości sztuk (Quantity) */}
                 {item.quantity > 1 && (

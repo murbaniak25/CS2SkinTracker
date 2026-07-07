@@ -141,6 +141,8 @@ export interface InventoryItem {
   quantity: number;
   floats: number[];
   image_url?: string;
+  change_24h: number;
+  rarity_color: string
 }
 
 export interface PortfolioSnapshot {
