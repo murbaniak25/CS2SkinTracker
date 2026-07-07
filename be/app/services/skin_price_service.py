@@ -51,7 +51,7 @@ class SkinPriceService:
 
         for r in data:
             full_name = r.get("market_hash_name")
-            price = r.get("min_price")
+            price = r.get("suggested_price") or r.get("mean_price") or r.get("min_price") or 0.0
             version = r.get("version")
             quantity = r.get("quantity", 0)
 

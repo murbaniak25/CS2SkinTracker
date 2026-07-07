@@ -38,6 +38,7 @@ class TradeUpService:
                 models.Skin.name.label("skin_name"),
                 models.WearType.name.label("wear_name"),
                 models.SkinVariant.stattrack.label("stattrack"),
+                models.SkinVariant.souvenir.label("souvenir"),
                 models.SkinVariant.last_price.label("last_price"),
                 models.Skin.image_url.label("image_url"),
                 models.Collection.name.label("collection_name"),
