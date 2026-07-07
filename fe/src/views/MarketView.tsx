@@ -29,6 +29,7 @@ const MarketView = () => {
   const [activeRarity, setActiveRarity] = useState("");
   const [activeCollection, setActiveCollection] = useState("");
   const [activeStatTrak, setActiveStatTrak] = useState<boolean | null>(null);
+  const [activeSouvenir, setActiveSouvenir] = useState<boolean | null>(null);
 
   // --- STANY TYMCZASOWE (UI Modala) ---
   const [tempSearch, setTempSearch] = useState("");
@@ -36,6 +37,7 @@ const MarketView = () => {
   const [tempRarity, setTempRarity] = useState("");
   const [tempCollection, setTempCollection] = useState("");
   const [tempStatTrak, setTempStatTrak] = useState<boolean | null>(null);
+  const [tempSouvenir, setTempSouvenir] = useState<boolean | null>(null);
 
   const itemsPerPage = 40;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
@@ -103,6 +105,7 @@ const MarketView = () => {
           rarity: activeRarity || undefined,
           collection: activeCollection || undefined,
           stattrack: activeStatTrak !== null ? activeStatTrak : undefined,
+          souvenir: activeSouvenir !== null ? activeSouvenir : undefined,
         };
 
         const response = await axios.get<PaginatedSkinResponse>(
@@ -129,6 +132,7 @@ const MarketView = () => {
     activeRarity,
     activeCollection,
     activeStatTrak,
+    activeSouvenir,
   ]);
 
   // --- HANDLERY ---
@@ -142,6 +146,7 @@ const MarketView = () => {
     setActiveRarity(tempRarity);
     setActiveCollection(tempCollection);
     setActiveStatTrak(tempStatTrak);
+    setActiveSouvenir(tempSouvenir);
     setCurrentPage(1);
     setIsFilterOpen(false);
   };
@@ -151,10 +156,12 @@ const MarketView = () => {
     setTempRarity("");
     setTempCollection("");
     setTempStatTrak(null);
+    setTempSouvenir(null);
     setActiveCondition("");
     setActiveRarity("");
     setActiveCollection("");
     setActiveStatTrak(null);
+    setActiveSouvenir(null);
     setCurrentPage(1);
     setIsFilterOpen(false);
   };
@@ -218,6 +225,7 @@ const MarketView = () => {
           setTempRarity(activeRarity);
           setTempCollection(activeCollection);
           setTempStatTrak(activeStatTrak);
+          setTempSouvenir(activeSouvenir);
           setIsFilterOpen(true);
         }}
         limit={itemsPerPage}
@@ -367,26 +375,48 @@ const MarketView = () => {
                 </select>
               </div>
 
-              <div className="flex items-center justify-between py-2 border-t border-border-muted/30 pt-6">
-                <label className="text-[10px] font-bold text-text-muted uppercase tracking-[0.2em]">
-                  StatTrak™ Only
-                </label>
-                <button
-                  onClick={() =>
-                    setTempStatTrak(tempStatTrak === true ? null : true)
-                  }
-                  style={{
-                    backgroundColor:
-                      tempStatTrak === true ? "oklch(0.76 0.1 271)" : "",
-                  }}
-                  className={`w-10 h-5 rounded-full relative transition-all border ${tempStatTrak === true ? "border-primary" : "bg-bg border-border-muted"}`}
-                >
-                  <div
-                    className={`absolute top-[3px] w-3 h-3 rounded-full transition-all ${tempStatTrak === true ? "left-[22px] bg-bg-dark" : "left-[4px] bg-text-muted"}`}
-                  />
-                </button>
-              </div>
+              {/* --- TOGGLE BUTTONS --- */}
+              <div className="space-y-2 border-t border-border-muted/30 pt-6">
+                <div className="flex items-center justify-between py-2">
+                  <label className="text-[10px] font-bold text-text-muted uppercase tracking-[0.2em]">
+                    StatTrak™ Only
+                  </label>
+                  <button
+                    onClick={() =>
+                      setTempStatTrak(tempStatTrak === true ? null : true)
+                    }
+                    style={{
+                      backgroundColor:
+                        tempStatTrak === true ? "oklch(0.76 0.1 271)" : "",
+                    }}
+                    className={`w-10 h-5 rounded-full relative transition-all border ${tempStatTrak === true ? "border-primary" : "bg-bg border-border-muted"}`}
+                  >
+                    <div
+                      className={`absolute top-[3px] w-3 h-3 rounded-full transition-all ${tempStatTrak === true ? "left-[22px] bg-bg-dark" : "left-[4px] bg-text-muted"}`}
+                    />
+                  </button>
+                </div>
 
+                <div className="flex items-center justify-between py-2">
+                  <label className="text-[10px] font-bold text-text-muted uppercase tracking-[0.2em]">
+                    Souvenir Only
+                  </label>
+                  <button
+                    onClick={() =>
+                      setTempSouvenir(tempSouvenir === true ? null : true)
+                    }
+                    style={{
+                      backgroundColor: tempSouvenir === true ? "#FFD700" : "",
+                    }}
+                    className={`w-10 h-5 rounded-full relative transition-all border ${tempSouvenir === true ? "border-[#FFD700]" : "bg-bg border-border-muted"}`}
+                  >
+                    <div
+                      className={`absolute top-[3px] w-3 h-3 rounded-full transition-all ${tempSouvenir === true ? "left-[22px] bg-bg-dark" : "left-[4px] bg-text-muted"}`}
+                    />
+                  </button>
+                </div>
+              </div>
+              {/* --- END TOGGLE BUTTONS --- */}
               <div className="grid grid-cols-2 gap-4">
                 <Button
                   variant="secondary"

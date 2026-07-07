@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   LineChart,
   Line,
@@ -44,7 +44,6 @@ const SkinDetailsModal = ({ variantId, onClose }: Props) => {
 
         <div className="p-10">
           <div className="flex items-center gap-8 mb-12">
-            {/* Obrazek z borderem i delikatnym glow w kolorze rzadkości */}
             <div
               className="w-32 h-32 bg-bg-light border rounded-sm flex items-center justify-center p-4 transition-all"
               style={{
@@ -60,19 +59,29 @@ const SkinDetailsModal = ({ variantId, onClose }: Props) => {
             </div>
 
             <div>
-              {/* Tytuł powraca do standardowego koloru text-text */}
               <h2 className="text-[22px] font-bold uppercase tracking-tight leading-tight text-text">
                 {data.weapon_name} | {data.skin_name}
               </h2>
-              <p className="text-text-muted font-bold text-[10px] uppercase tracking-[0.2em] mt-1">
-                {data.wear_name}{" "}
-                {data.stattrack && <span className="text-[#CF6A32]">ST™</span>}
+              {/* Tagi rzadkości w modalu */}
+              <p className="text-text-muted font-bold text-[10px] uppercase tracking-[0.2em] mt-1 flex items-center gap-2">
+                <span>{data.wear_name}</span>
+                {data.stattrack && (
+                  <span className="text-[#CF6A32] border border-[#CF6A32]/40 px-1.5 rounded-sm">
+                    STATTRAK™
+                  </span>
+                )}
+                {data.souvenir && (
+                  <span className="text-[#FFD700] border border-[#FFD700]/40 px-1.5 rounded-sm">
+                    SOUVENIR
+                  </span>
+                )}
               </p>
+              {/* Główna cena w PLN */}
               <p className="text-[32px] font-black text-primary mt-3 uppercase tracking-tighter">
-                $
                 {data.last_price.toLocaleString(undefined, {
                   minimumFractionDigits: 2,
-                })}
+                })}{" "}
+                PLN
               </p>
             </div>
           </div>
@@ -91,12 +100,13 @@ const SkinDetailsModal = ({ variantId, onClose }: Props) => {
                   orientation="right"
                   stroke="oklch(0.5 0.02 271)"
                   fontSize={10}
-                  tickFormatter={(v) => `$${v}`}
+                  tickFormatter={(v) => `${v} PLN`} // Zmiana z $ na PLN na osi Y
                   axisLine={false}
                   tickLine={false}
                   domain={["auto", "auto"]}
                 />
                 <Tooltip
+                  formatter={(value: any) => [`${value} PLN`, "Price"]} // Zmiana waluty w Tooltipie
                   contentStyle={{
                     backgroundColor: "var(--bg-dark)",
                     border: "1px solid var(--border-muted)",

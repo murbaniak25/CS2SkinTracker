@@ -57,26 +57,34 @@ const MainList = ({ skins, onSkinClick }: MainListProps) => {
                   </div>
                 </div>
 
-                {/* Nazwa broni i skina - powrót do standardowego koloru */}
+                {/* Nazwa broni i skina z Tagami */}
                 <div className="col-span-6 text-[14px] font-medium pr-4 text-text">
-                  <div className="truncate uppercase tracking-tight">
-                    {skin.weapon_name} | {skin.skin_name}
+                  <div className="truncate uppercase tracking-tight flex items-center gap-2">
+                    <span>
+                      {skin.weapon_name} | {skin.skin_name}
+                    </span>
                     {skin.stattrack && (
-                      <span className="ml-1 text-[10px] text-[#CF6A32] font-black tracking-tighter">
-                        ST™
+                      <span className="text-[9px] text-[#CF6A32] border border-[#CF6A32]/40 px-1 rounded-sm font-black tracking-widest">
+                        STATTRAK™
+                      </span>
+                    )}
+                    {skin.souvenir && (
+                      <span className="text-[9px] text-[#FFD700] border border-[#FFD700]/40 px-1 rounded-sm font-black tracking-widest">
+                        SOUVENIR
                       </span>
                     )}
                   </div>
-                  <div className="text-[10px] text-text-muted font-bold uppercase tracking-widest">
+                  <div className="text-[10px] text-text-muted font-bold uppercase tracking-widest mt-0.5">
                     {skin.wear_name}
                   </div>
                 </div>
 
+                {/* Cena w PLN zamiast USD */}
                 <div className="col-span-2 text-right text-[16px] font-bold text-text uppercase">
-                  $
                   {skin.last_price.toLocaleString(undefined, {
                     minimumFractionDigits: 2,
-                  })}
+                  })}{" "}
+                  PLN
                 </div>
 
                 <div

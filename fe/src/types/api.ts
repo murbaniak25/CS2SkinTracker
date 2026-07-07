@@ -4,6 +4,7 @@ export interface Skin {
   skin_name: string;
   wear_name: string;
   stattrack: boolean;
+  souvenir: boolean;
   rarity_color: string;
   image_url: string | null;
   last_price: number;
