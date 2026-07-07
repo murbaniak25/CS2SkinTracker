@@ -1,11 +1,11 @@
 import jwt
-from datetime import datetime, timedelta, timezone
+from datetime import datetime,timezone
 from typing import Any, Union
 from app.core.config import settings
 from datetime import timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.models.models import User
 from app.db.session import get_db

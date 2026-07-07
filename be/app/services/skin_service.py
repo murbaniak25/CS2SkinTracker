@@ -159,6 +159,7 @@ class SkinService:
                 models.SkinVariant.skin_id,
                 models.SkinVariant.wear_id,
                 models.SkinVariant.stattrack,
+                models.SkinVariant.souvenir,
                 models.SkinVariant.last_price
             )
             .where(models.SkinVariant.last_price >= 50.0)
@@ -172,7 +173,7 @@ class SkinService:
             return {"current_value": 0, "change_24h": 0, "chart_data": []}
 
         current_avg = sum(s.last_price for s in top_skins) / len(top_skins)
-        top_criteria = [(s.skin_id, s.wear_id, s.stattrack) for s in top_skins]
+        top_criteria = [(s.skin_id, s.wear_id, s.stattrack, s.souvenir) for s in top_skins]
 
         history_stmt = (
             select(
@@ -185,7 +186,6 @@ class SkinService:
                     models.SkinPrice.wear_id,
                     models.SkinPrice.stattrack,
                     models.SkinPrice.souvenir
-
                 ).in_(top_criteria)
             )
             .where(
