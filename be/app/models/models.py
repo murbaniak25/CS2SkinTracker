@@ -1,10 +1,10 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 
 from app.core.utils import get_utc_now
 
 from sqlalchemy import String, Boolean, Float, ForeignKey, DateTime, UniqueConstraint, Index, Integer
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
@@ -127,3 +127,17 @@ class SkinVariant(Base):
 
     skin: Mapped["Skin"] = relationship()
     wear: Mapped["WearType"] = relationship()
+
+
+class UserPortfolioSnapshot(Base):
+    __tablename__ = 'user_portfolio_snapshots'
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.user_id", ondelete="CASCADE"), index=True)
+
+    total_value: Mapped[float] = mapped_column(Float, default=0.0)
+    items_count: Mapped[int] = mapped_column(Integer, default=0)
+    currency: Mapped[str] = mapped_column(String(3), default="PLN")
+    items_data: Mapped[list | dict | None] = mapped_column(JSONB, nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=get_utc_now, index=True)

@@ -4,7 +4,7 @@ from fastapi import HTTPException
 from sqlalchemy import select, delete, desc, and_
 
 from app.core.utils import get_utc_now
-from app.models.models import UserSkin, WearType, Weapon, Skin, User, Rarity, SkinVariant
+from app.models.models import UserSkin, WearType, Weapon, Skin, User, Rarity, SkinVariant, UserPortfolioSnapshot
 import re
 
 class UserService:
@@ -122,6 +122,79 @@ class UserService:
 
         if user_skins_to_add:
             db.add_all(user_skins_to_add)
+
+        await db.flush()
+
+        inventory_dump_stmt = (
+            select(
+                Weapon.name.label("weapon_name"),
+                Skin.name.label("skin_name"),
+                WearType.name.label("wear_name"),
+                UserSkin.float_value,
+                UserSkin.stattrack,
+                UserSkin.souvenir,
+                SkinVariant.last_price
+            )
+            .select_from(UserSkin)
+            .join(Skin, UserSkin.skin_id == Skin.skin_id)
+            .join(Weapon, Skin.weapon_id == Weapon.weapon_id)
+            .outerjoin(WearType, UserSkin.wear_id == WearType.wear_id)
+            .outerjoin(
+                SkinVariant,
+                and_(
+                    UserSkin.skin_id == SkinVariant.skin_id,
+                    UserSkin.wear_id == SkinVariant.wear_id,
+                    UserSkin.stattrack == SkinVariant.stattrack,
+                    UserSkin.souvenir == SkinVariant.souvenir
+                )
+            )
+            .where(UserSkin.user_id == user_id)
+        )
+
+        items_res = await db.execute(inventory_dump_stmt)
+        items_list = items_res.mappings().all()
+
+        grouped_items = {}
+        total_value = 0.0
+
+        for item in items_list:
+            price = item["last_price"] or 0.0
+            total_value += price
+
+            item_key = (
+                item["weapon_name"],
+                item["skin_name"],
+                item["wear_name"],
+                item["stattrack"],
+                item["souvenir"]
+            )
+
+            if item_key not in grouped_items:
+                grouped_items[item_key] = {
+                    "weapon": item["weapon_name"],
+                    "skin": item["skin_name"],
+                    "wear": item["wear_name"],
+                    "stattrack": item["stattrack"],
+                    "souvenir": item["souvenir"],
+                    "price": price,
+                    "quantity": 1,
+                    "floats": [item["float_value"]] if item["float_value"] else []
+                }
+            else:
+                grouped_items[item_key]["quantity"] += 1
+                if item["float_value"]:
+                    grouped_items[item_key]["floats"].append(item["float_value"])
+
+        snapshot_json_data = list(grouped_items.values())
+
+        new_snapshot = UserPortfolioSnapshot(
+            user_id=user_id,
+            total_value=total_value,
+            items_count=len(items_list),
+            currency="PLN",
+            items_data=snapshot_json_data
+        )
+        db.add(new_snapshot)
 
         user_res = await db.execute(select(User).where(User.user_id == user_id))
         user = user_res.scalar_one_or_none()
