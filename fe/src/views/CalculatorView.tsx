@@ -194,6 +194,15 @@ const CalculatorView = () => {
     setSlots(newSlots);
   };
 
+  const handleClearAll = () => {
+    setSlots(
+      Array(10)
+        .fill(null)
+        .map(() => ({ skin: null, floatValue: "" })),
+    );
+    setSimulationResult(null);
+  };
+
   const handleDuplicateSkin = (sourceIndex: number) => {
     const sourceSlot = slots[sourceIndex];
     if (!sourceSlot.skin) return;
@@ -303,14 +312,27 @@ const CalculatorView = () => {
           </div>
         </div>
 
-        <Button
-          variant="primary"
-          className="px-12 py-3 bg-[oklch(0.76_0.1_271)] h-[48px] uppercase tracking-widest font-black"
-          onClick={handleSimulate}
-          disabled={isSimulating}
-        >
-          {isSimulating ? "WORKING..." : "Simulate Tradeup"}
-        </Button>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={handleClearAll}
+            disabled={
+              isSimulating ||
+              (slots.every((s) => s.skin === null) && !simulationResult)
+            }
+            className="px-6 h-[48px] text-[12px] font-black uppercase tracking-widest text-text-muted border border-border-muted rounded-sm hover:text-danger hover:border-danger hover:bg-danger/10 transition-all disabled:opacity-30 disabled:pointer-events-none"
+          >
+            Clear All
+          </button>
+
+          <Button
+            variant="primary"
+            className="px-12 py-3 bg-[oklch(0.76_0.1_271)] h-[48px] uppercase tracking-widest font-black"
+            onClick={handleSimulate}
+            disabled={isSimulating}
+          >
+            {isSimulating ? "WORKING..." : "Simulate Tradeup"}
+          </Button>
+        </div>
       </div>
 
       {/* KONTRAKT: 10 SLOTÓW */}
@@ -354,6 +376,9 @@ const CalculatorView = () => {
               >
                 {slot.skin ? (
                   <>
+                    <div className="absolute top-2 left-2 z-20 bg-bg-dark/90 px-1.5 py-0.5 border border-border-muted rounded-sm text-[10px] font-black text-text uppercase shadow-md">
+                      {slot.skin.last_price.toFixed(2)} PLN
+                    </div>
                     {/* --- IKONKI AKCJI --- */}
                     <div className="absolute top-2 right-2 z-20 flex items-center gap-1">
                       <div
@@ -419,6 +444,11 @@ const CalculatorView = () => {
                       <span style={{ color: currentRarityColor }}>
                         {slot.skin.weapon_name}
                       </span>{" "}
+                      {isStatTrak && (
+                        <span className="text-[#CF6A32] tracking-tighter ml-0.5 mr-0.5">
+                          ST™
+                        </span>
+                      )}
                       <span className="text-text-muted opacity-50 px-0.5">
                         |
                       </span>{" "}
@@ -518,12 +548,20 @@ const CalculatorView = () => {
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <p
-                    className="text-[13px] font-black uppercase truncate drop-shadow-md"
-                    style={{ color: nextRarityColor }}
-                  >
-                    {o.weapon_name} | {o.skin_name}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p
+                      className="text-[13px] font-black uppercase truncate drop-shadow-md"
+                      style={{ color: nextRarityColor }}
+                    >
+                      {o.weapon_name} | {o.skin_name}
+                    </p>
+                    {/* OZNACZENIE STATTRAK W WYNIKACH */}
+                    {isStatTrak && (
+                      <span className="text-[9px] text-[#CF6A32] border border-[#CF6A32]/40 px-1 rounded-sm font-black tracking-widest mt-0.5">
+                        STATTRAK™
+                      </span>
+                    )}
+                  </div>
                   <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-1">
                     {o.estimated_wear} ({o.estimated_float.toFixed(8)})
                   </p>
@@ -613,12 +651,20 @@ const CalculatorView = () => {
                       alt=""
                     />
                     <div className="flex-1">
-                      <p
-                        className="text-[12px] font-bold uppercase leading-none drop-shadow-md"
-                        style={{ color: currentRarityColor }}
-                      >
-                        {skin.weapon_name} | {skin.skin_name}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p
+                          className="text-[12px] font-bold uppercase leading-none drop-shadow-md"
+                          style={{ color: currentRarityColor }}
+                        >
+                          {skin.weapon_name} | {skin.skin_name}
+                        </p>
+                        {/* PLAKIETKA STATTRAK W MODALU (NOWOŚĆ) */}
+                        {isStatTrak && (
+                          <span className="text-[9px] text-[#CF6A32] border border-[#CF6A32]/40 px-1 rounded-sm font-black tracking-widest mt-0.5">
+                            STATTRAK™
+                          </span>
+                        )}
+                      </div>
                       <p className="text-[10px] font-bold text-text-muted uppercase mt-1 tracking-tighter">
                         {skin.collection_name} • {skin.wear_name}
                       </p>

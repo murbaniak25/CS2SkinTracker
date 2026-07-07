@@ -1,8 +1,8 @@
 import { useAuth } from "../../context/AuthContext";
 
 interface NavbarProps {
-  setView: (view: "market" | "calculator") => void;
-  currentView: "market" | "calculator";
+  setView: (view: "market" | "calculator" | "inventory") => void;
+  currentView: "market" | "calculator" | "inventory";
 }
 
 const Navbar = ({ setView, currentView }: NavbarProps) => {
@@ -57,6 +57,27 @@ const Navbar = ({ setView, currentView }: NavbarProps) => {
               }`}
             />
           </button>
+
+          {/* --- ZAKŁADKA INVENTORY (Tylko dla zalogowanych) --- */}
+          {user && (
+            <button
+              onClick={() => setView("inventory")}
+              className={`relative text-[13px] font-bold uppercase tracking-[0.15em] transition-colors group ${
+                currentView === "inventory"
+                  ? "text-primary"
+                  : "text-text hover:text-primary"
+              }`}
+            >
+              Inventory
+              <span
+                className={`absolute -bottom-1 left-0 h-[2px] bg-primary transition-all duration-300 ${
+                  currentView === "inventory"
+                    ? "w-full"
+                    : "w-0 group-hover:w-full"
+                }`}
+              />
+            </button>
+          )}
         </div>
       </div>
 

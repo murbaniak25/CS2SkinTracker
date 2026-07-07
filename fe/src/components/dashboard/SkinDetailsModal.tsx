@@ -100,13 +100,13 @@ const SkinDetailsModal = ({ variantId, onClose }: Props) => {
                   orientation="right"
                   stroke="oklch(0.5 0.02 271)"
                   fontSize={10}
-                  tickFormatter={(v) => `${v} PLN`} // Zmiana z $ na PLN na osi Y
+                  tickFormatter={(v) => `${v} PLN`}
                   axisLine={false}
                   tickLine={false}
                   domain={["auto", "auto"]}
                 />
                 <Tooltip
-                  formatter={(value: any) => [`${value} PLN`, "Price"]} // Zmiana waluty w Tooltipie
+                  formatter={(value: any) => [`${value} PLN`, "Price"]}
                   contentStyle={{
                     backgroundColor: "var(--bg-dark)",
                     border: "1px solid var(--border-muted)",

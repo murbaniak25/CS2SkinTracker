@@ -26,7 +26,7 @@ const MarketSection = ({
 
   return (
     <section className="grid grid-cols-12 gap-y-6 items-center">
-      {/* ... Sekcja Search i Filter zostaje bez zmian ... */}
+      {/* ... Sekcja Search i Filter ... */}
       <div className="col-span-12 md:col-span-4 relative group">
         <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none text-text">
           <svg

@@ -130,3 +130,24 @@ export interface UserMeResponse {
     avatar_url?: string;
     last_login_at: string;
 }
+
+export interface InventoryItem {
+  weapon: string;
+  skin: string;
+  wear: string;
+  stattrack: boolean;
+  souvenir: boolean;
+  price: number;
+  quantity: number;
+  floats: number[];
+  image_url?: string;
+}
+
+export interface PortfolioSnapshot {
+  id: string;
+  total_value: number;
+  items_count: number;
+  currency: string;
+  created_at: string;
+  items_data: InventoryItem[];
+}

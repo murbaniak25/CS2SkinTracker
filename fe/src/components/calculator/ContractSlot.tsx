@@ -1,5 +1,3 @@
-import React from "react";
-
 const ContractSlot = ({ index }: { index: number }) => {
   return (
     <div className="aspect-[4/3] bg-bg-light/30 border-2 border-dashed border-border-muted rounded-sm flex flex-col items-center justify-center group hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer relative overflow-hidden">
