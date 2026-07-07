@@ -133,12 +133,16 @@ class UserService:
                 UserSkin.float_value,
                 UserSkin.stattrack,
                 UserSkin.souvenir,
-                SkinVariant.last_price
+                SkinVariant.last_price,
+                SkinVariant.change_24h,
+                Skin.image_url,
+                Rarity.color_hex.label("rarity_color")
             )
             .select_from(UserSkin)
             .join(Skin, UserSkin.skin_id == Skin.skin_id)
             .join(Weapon, Skin.weapon_id == Weapon.weapon_id)
             .outerjoin(WearType, UserSkin.wear_id == WearType.wear_id)
+            .outerjoin(Rarity, Skin.rarity_id == Rarity.rarity_id)
             .outerjoin(
                 SkinVariant,
                 and_(
@@ -178,7 +182,10 @@ class UserService:
                     "souvenir": item["souvenir"],
                     "price": price,
                     "quantity": 1,
-                    "floats": [item["float_value"]] if item["float_value"] else []
+                    "floats": [item["float_value"]] if item["float_value"] else [],
+                    "image_url": item["image_url"],
+                    "change_24h": item["change_24h"] or 0.0,
+                    "rarity_color": item["rarity_color"] or "#9ca3af"
                 }
             else:
                 grouped_items[item_key]["quantity"] += 1
@@ -271,7 +278,17 @@ class UserService:
         result = await db.execute(stmt)
         return result.mappings().all()
 
+    async def get_inventory_history(self, db: AsyncSession, user_id):
+        stmt = (
+            select(UserPortfolioSnapshot)
+            .where(UserPortfolioSnapshot.user_id == user_id)
+            .order_by(UserPortfolioSnapshot.created_at.desc())
+        )
 
+        result = await db.execute(stmt)
+        snapshots = result.scalars().all()
+
+        return snapshots
 
 
 

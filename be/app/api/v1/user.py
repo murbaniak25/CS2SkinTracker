@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.security import get_current_user
 from app.db.session import get_db
 from app.models import User
-from app.schemas.schemas import SkinListRead
+from app.schemas.schemas import SkinListRead, PortfolioSnapshotRead
 from app.services.user_service import UserService
 
 router = APIRouter()
@@ -34,3 +34,16 @@ async def get_my_inventory(
         raise HTTPException(status_code=400, detail="User has no connected Steam account")
     items = await user_svc.get_user_inventory(db, current_user.user_id)
     return items
+
+
+@router.get("/portfolio/history", response_model=List[PortfolioSnapshotRead])
+async def get_portfolio_history(
+        current_user: User = Depends(get_current_user),
+        db: AsyncSession = Depends(get_db),
+):
+    user_svc = UserService()
+    if not current_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    snapshots = await user_svc.get_inventory_history(db, current_user.user_id)
+    return snapshots

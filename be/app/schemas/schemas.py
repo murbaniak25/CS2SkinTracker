@@ -123,3 +123,24 @@ class UserMeResponse(BaseModel):
     name: str
     avatar_url: Optional[str] = None
     last_login_at: datetime
+
+class InventoryItemData(BaseModel):
+    weapon: str
+    skin: str
+    wear: Optional[str] = None
+    stattrack: bool
+    souvenir: bool
+    price: float
+    quantity: int
+    floats: list[float]
+    image_url: Optional[str] = None
+    rarity_color: str
+    change_24h: float
+
+class PortfolioSnapshotRead(BaseRead):
+    id: UUID
+    total_value: float
+    items_count: int
+    currency: str
+    created_at: datetime
+    items_data: list[InventoryItemData]
