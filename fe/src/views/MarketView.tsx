@@ -50,7 +50,7 @@ const MarketView = () => {
       axios
         .get("http://127.0.0.1:8000/api/v1/market-stats/overview")
         .then((res) => setMarketOverview(res.data))
-        .catch((err) => console.error("Market Stats Error:", err));
+        .catch(() => {});
     };
     fetchStats();
     const interval = setInterval(fetchStats, 60000);
@@ -88,7 +88,7 @@ const MarketView = () => {
 
         setFilterOptions({ ...res.data, rarities: filteredRarities });
       })
-      .catch((err) => console.error("Filter Metadata Error:", err));
+      .catch(() => {});
   }, []);
 
   // 3. Główna lista skinów

@@ -73,7 +73,7 @@ const CalculatorView = () => {
           setRarity(validRarities[0].name);
         }
       })
-      .catch((err) => console.error("Filter Metadata Error:", err));
+      .catch(() => {});
   }, []);
 
   // 2. Pobieranie skinów do modala
@@ -182,7 +182,6 @@ const CalculatorView = () => {
       );
       setSimulationResult(res.data);
     } catch (err) {
-      console.error(err);
     } finally {
       setIsSimulating(false);
     }

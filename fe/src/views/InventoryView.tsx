@@ -26,7 +26,6 @@ const InventoryView = () => {
       const res = await api.get<PortfolioSnapshot[]>("/user/portfolio/history");
       setSnapshots(res.data);
     } catch (err) {
-      console.error("Failed to fetch portfolio history", err);
     } finally {
       setIsLoading(false);
     }
@@ -47,8 +46,6 @@ const InventoryView = () => {
         localStorage.setItem("cooldownStart", Date.now().toString());
         setCooldownRemaining(15 * 60);
       } else {
-        console.error("Failed to sync inventory", err);
-        alert("Error syncing inventory. Check console.");
       }
     } finally {
       setIsSyncing(false);
