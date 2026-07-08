@@ -17,6 +17,8 @@ const InventoryView = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
 
+  const [cooldownRemaining, setCooldownRemaining] = useState<number>(0);
+
   // 1. Pobieranie historii z bazy danych
   const fetchHistory = async () => {
     setIsLoading(true);
@@ -34,21 +36,56 @@ const InventoryView = () => {
     fetchHistory();
   }, []);
 
-  // 2. Akcja synchronizacji ze Steam (wywołanie Celery w tle / API)
   const handleSync = async () => {
     setIsSyncing(true);
     try {
       await api.post("/user/sync-inventory");
+      localStorage.setItem("cooldownStart", Date.now().toString());
       await fetchHistory();
-    } catch (err) {
-      console.error("Failed to sync inventory", err);
-      alert("Error syncing inventory. Check console.");
+    } catch (err: any) {
+      if (err.response && err.response.status === 429) {
+        localStorage.setItem("cooldownStart", Date.now().toString());
+        setCooldownRemaining(15 * 60);
+      } else {
+        console.error("Failed to sync inventory", err);
+        alert("Error syncing inventory. Check console.");
+      }
     } finally {
       setIsSyncing(false);
     }
   };
 
   const latestSnapshot = snapshots.length > 0 ? snapshots[0] : null;
+  useEffect(() => {
+    const checkCooldown = () => {
+      const cooldownStart = localStorage.getItem("cooldownStart");
+      if (!cooldownStart) {
+        setCooldownRemaining(0);
+        return;
+      }
+
+      const diff = Date.now() - parseInt(cooldownStart, 10);
+      const cooldownMs = 15 * 60 * 1000; // 15 minut
+
+      if (diff >= 0 && diff < cooldownMs) {
+        setCooldownRemaining(Math.floor((cooldownMs - diff) / 1000));
+      } else {
+        setCooldownRemaining(0);
+        localStorage.removeItem("cooldownStart");
+      }
+    };
+
+    checkCooldown();
+    const interval = setInterval(checkCooldown, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, "0")}`;
+  };
 
   const itemsData = latestSnapshot?.items_data || [];
 
@@ -105,10 +142,14 @@ const InventoryView = () => {
         <Button
           variant="primary"
           onClick={handleSync}
-          disabled={isSyncing}
-          className="px-8 py-3 bg-[oklch(0.76_0.1_271)] h-[48px] uppercase tracking-widest font-black"
+          disabled={isSyncing || cooldownRemaining > 0}
+          className="px-8 py-3 bg-[oklch(0.76_0.1_271)] h-[48px] uppercase tracking-widest font-black transition-all"
         >
-          {isSyncing ? "Syncing..." : "Sync Steam Inventory"}
+          {isSyncing
+            ? "Syncing..."
+            : cooldownRemaining > 0
+              ? `Sync in ${formatTime(cooldownRemaining)}`
+              : "Sync Steam Inventory"}
         </Button>
       </div>
       {/* SEKCJA 1.5: HIGHLIGHTS (MVP, Top Gainer, Top Loser) */}
