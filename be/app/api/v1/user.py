@@ -19,6 +19,8 @@ async def sync_inventory(current_user: User=Depends(get_current_user), db: Async
     if not current_user:
         raise HTTPException(status_code=404, detail="User has no connected Steam account")
 
+    user_svc.check_sync_cooldown(current_user)
+
     parsed_items = await user_svc.fetch_steam_inventory(current_user.steam_id)
     await user_svc.sync_user_inventory_db(db, current_user.user_id, parsed_items)
 

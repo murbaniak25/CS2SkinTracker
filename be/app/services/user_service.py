@@ -290,6 +290,19 @@ class UserService:
 
         return snapshots
 
+    def check_sync_cooldown(self, user):
+        if user.last_inventory_synced:
+            now = get_utc_now()
+            time_since_last_sync = now - user.last_inventory_synced
+
+            seconds_passed = time_since_last_sync.total_seconds()
+
+            if 0 <= seconds_passed < 900:
+                raise HTTPException(
+                    status_code=429,
+                    detail="Sync is on cooldown. Please wait 15 minutes."
+                )
+
 
 
 
